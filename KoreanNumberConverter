@@ -1,0 +1,61 @@
+<?php
+
+declare(strict_types=1);
+
+final class KoreanNumberConverter
+{
+    private const Digits = ['', '일', '이', '삼', '사', '오', '육', '칠', '팔', '구'];
+    private const Units = ['', '십', '백', '천'];
+    private const LargeUnits = ['', '만', '억', '조', '경'];
+
+    private const Zero = '영';
+    private const Minus = '마이너스';
+    
+    public function Convert(int $Number): string {
+        if ($Number === 0) return self::Zero;
+        if ($Number < 0) return self::Minus . $this->ConvertPositive(-$Number);
+        return $this->ConvertPositive($Number);
+    }
+    
+    private function ConvertPositive(int $Number): string {
+        $Digits = array_map('intval', str_split((string)$Number));
+        $Len = count($Digits);
+        
+        $PadCount = (4 - ($Len % 4)) % 4;
+        if ($PadCount > 0) {
+            $Digits = array_merge(array_fill(0, $PadCount, 0), $Digits);
+            $Len += $PadCount;
+        }
+        
+        $Result = '';
+        $Groups = array_chunk($Digits, 4);
+        $GroupCount = count($Groups);
+        
+        foreach ($Groups as $Index => $Group) {
+            $GroupResult = $this->ConvertGroup($Group);
+            if ($GroupResult !== '') {
+                $LargeUnitIndex = $GroupCount - $Index - 1;
+                $Result .= $GroupResult . self::LargeUnits[$LargeUnitIndex];
+            }
+        }
+        
+        return $Result;
+    }
+    
+    private function ConvertGroup(array $Group): string {
+        $Result = '';
+        $LastIndex = 3;
+        
+        for ($i = 0; $i <= $LastIndex; $i++) {
+            $Digit = $Group[$i];
+            if ($Digit === 0) continue;
+            
+            $UnitIndex = $LastIndex - $i;
+            $Result .= ($Digit === 1 && $UnitIndex > 0)
+                ? self::Units[$UnitIndex]
+                : self::Digits[$Digit] . self::Units[$UnitIndex];
+        }
+        
+        return $Result;
+    }
+}
